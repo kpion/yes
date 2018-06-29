@@ -1,18 +1,183 @@
 <html>
     <head>
-        <title>Yes script index</title>
+        <title>y script tests</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script src="src/yes.js"></script>
+		<style>
+			.shock{
+				background-color:#dfd;
+			}
+		</style>
     </head>
     <body>
-		<p>
-			<a href = 'tests.html'>See tests.html</a>
-		</p>
-		<p>
-			<a href = 'others/nodelist.html'>others/nodelist.html (uses prototype, no proxy)</a>
-		</p>
-		<p>
-			<a href = 'others/umbrella.html'>others/umbrella.html (uses proxy)</a>			
-		</p>
+        <div class = 'wrapper'>
+            <div>
+                See the line starting with //tests to see what is going on.<br>
+                This div has no class.<br>
+                These do:
+            </div>
+            <div class = 'd1 allDivs' id = 'div-d1'>
+				blah1 
+            </div>
+
+            <div class = 'd2 allDivs' id = 'div-d2' data-da = 'test data A val' data-db = 'test data B val'>
+				blah2
+				<div class = 'inside allDivs'>
+					inside...
+				</div>
+            </div>
+
+        </div>    
+
+        <div class = 'allDivs'>
+            outside wrapper
+        </div>        
+
+		<div id = 'logger'>
+
+		</div>
+
+		<script>
+            (function () {
+				//this is only to simplify console logging:
+				function logg(text, callback){
+					console.groupCollapsed(text);
+					callback();
+					console.groupEnd();
+				}
+				
+				/////////////////////////////////////////////////////////////////////////
+				//inits
+				y().setLogging(true);
+				var vanillaD2Elem = document.querySelector('.d2');
+				console.log('vanillaD2Elem:',vanillaD2Elem);
+
+                //These work fine:
+                let yAllDivs = y('.wrapper .allDivs');
+                let yDiv2 = y('.wrapper .d2');
+				
+				console.groupEnd();
+				
+				
+				
+				/////////////////////////////////////////////////////////////////////////
+				console.groupCollapsed('Basics');
+
+                //methods:
+				
+				logg('setAttribute',()=>{
+					y('.allDivs').setAttribute('style', 'text-decoration:underline');//OK
+				});
+				
+				logg('getAttribute',()=>{
+					console.log('result:', yAllDivs.getAttribute('style'));//OK
+				});
+				
+
+				logg('chaining',()=>{
+					//yAllDivs.setAttribute('style','border-left:3px solid red').
+					//		setAttribute('title','title changed');//OK
+
+				});
+
+				
+				//properties
+				logg('setting simple prop, like .title',()=>{
+	                y('.allDivs').title = 'title changed 2';//OK
+				});
+
+				logg('setting prop.subProp, like style.color',()=>{
+					yAllDivs.style.color = 'green';//OK!
+					yDiv2.style.color = 'orange';//OK!
+				});
+				
+				logg('playing with innerHTML',()=>{
+					console.log('d2 reading:', y('.d2').innerHTML);//OK
+					y('.d2 .inside').innerHTML = '<p>aaaaaaaaaaaaa</p>';//OK
+				});
+
+					
+				logg('seting onclick event by .addEventListener',()=>{
+					y('.allDivs').addEventListener('click',event => {
+						y(event.target).style.color = 'brown';//ok!
+					});//OK
+				});
+
+
+				console.groupEnd();//end of basics
+				
+			
+				/////////////////////////////////////////////////////////////////////////
+				//Reading/writing props.subprops including methods like classList.add()
+                
+				console.groupCollapsed('Writing props.subprops');
+
+                logg('adding classList.add',()=>{
+					yAllDivs.classList.add('shock');//ok
+				});
+
+                logg('reading style.color:',()=>{
+					console.log('result:', yDiv2.style.color);
+				});	
+
+                logg('reading string dataset',()=>{
+					console.log('result:', y('.d2').dataset.da);//ok
+				});
+				
+                logg('reading string classname:', ()=>{
+					console.log('result:', yAllDivs.className);
+				});
+	
+
+                logg('setting and reading user prop', () => {
+					vanillaD2Elem.userProp = {userSubProp: {userSubSubProp: 'user sub sub prop val'}};
+					console.log('result:', yDiv2.userProp.userSubProp.userSubSubProp);
+				});
+				
+				logg('setting and reading user prop', () => {
+					//yDiv2.userProp = {userSubProp: {userSubSubProp: 'user sub sub prop val CHANGED'}};//OK
+					yDiv2.userProp.userSubProp.userSubSubProp = 'CHANGED';
+					console.log('result:', yDiv2.userProp.userSubProp.userSubSubProp);//ok!
+				});
+				
+				
+				
+				console.groupEnd();//end of "Reading/writing props.subprops"
+				
+				/////////////////////////////////////////////////////////////////////////
+				//Experiments with new stuff
+                				
+				console.group('Experiments with new stuff');
+				
+				logg('foreach', () => {
+					yDiv2.forEach(elem => {
+						elem.style.textShadow ='-2px -2px 2px #bbb';
+					});//.style.paddingLeft = '30px';
+				});
+				
+				logg('filtering:', () => {
+					let filtered = y(yAllDivs.filter(el => el.tagName === 'DIV'));
+					filtered.style.border = '10px solid #aad';
+				});
+				
+					
+				console.groupEnd();// end of experiments with new stuff
+		
+                /////////
+                //problems:
+				console.groupCollapsed('Known problems');
+                
+				console.log('object style');
+				console.log('result:',yAllDivs.style);//wrong - returns proxied y
+				
+				console.log('object dataset');
+				console.log('result:',yAllDivs.dataset);//wrong - returns proxied y
+			
+				console.groupEnd();//Known problems
+
+            }());
+
+		</script>
     </body>
 </html>    

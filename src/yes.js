@@ -1,9 +1,15 @@
+/*
+experimental selector wrapper
+https://github.com/kpion/yes
+*/
 (function (window) {
-    Utils = {
+    utils = {
         ///////////////////////////////////////
         //internal:
+
+        //btw: we want these functions here, not in the 'Yes' class, to not unnecessarily call the proxy's get trap. 
+
         /*
-         * 
          * returns /sets a value in a object.subobject etc by given "path", like here:
          objPath ({a: {b: {c: 'hello'}}, ['a', 'b', 'c']};
          will return 'hello'.
@@ -29,13 +35,22 @@
 
             });
             return cur;
-        }
+        },
 
+        log(...params){
+            if(typeof this.loggingEnabled !== 'undefined' && this.loggingEnabled === false){
+                return;
+            }
+            console.log(...params);
+        },
+        error(...params){
+            if(typeof this.loggingEnabled !== 'undefined' && this.loggingEnabled === false){
+                return;
+            }
+            console.error(...params);
+        }        
     };
-    /*
-     * 
-     * new in 0.00001 - extends Array. seems to work, but... later. 
-     */
+
     class Yes extends Array{
 
         constructor(selector, context = null, workingWithPropertyChain = null) {
@@ -50,7 +65,7 @@
                 dbgInstantiationMethod = 'string';
                 this.nodes = Array.from(this.context.querySelectorAll(selector));
                 //super.push(...Array.from(this.context.querySelectorAll(selector)));
-                //console.log(this);
+                //Utils.log(this);
             } else if (selector instanceof HTMLElement) {
                 dbgInstantiationMethod = 'HTMLElement';
                 this.nodes = [selector];
@@ -61,6 +76,8 @@
             } else if (selector instanceof Yes) {
                 //copying to ourselves
                 Object.assign(this, selector);
+            }else{
+                //acceptable in certain situations only, like calling e.g. y().setLogging(false);
             }
 
             //This is so we can access the object with [index]: (@todo: since we're trapping the 'get', then maybe there isnumber(prop)... return node[prop] would be fine?)
@@ -72,16 +89,16 @@
                     this[i] = this.nodes[i];
                 }
             }
-            console.log(`Yes class instantiated (method: ${dbgInstantiationMethod} )`);
+            utils.log(`Yes class instantiated (method: ${dbgInstantiationMethod} )`);
             if (workingWithPropertyChain) {
-                console.log('   instantiated with workingWithPropertyChain: ', workingWithPropertyChain);
+                utils.log('   instantiated with workingWithPropertyChain: ', workingWithPropertyChain);
             }
-            console.log('   nodes:', this.nodes);
+            utils.log('   nodes:', this.nodes);
             
         }
 
-        //methods:
-        
+ 
+
         //exceptionally - only to return 'this', so we can do chaining.
         /*forEach(elem) {
             //this.nodes.forEach(elem);
@@ -95,21 +112,18 @@
         //- a property or method
         //receiver is 'this' proxied, as in "Proxy(this)";
         get(target, prop, receiver) {
-            //console.log('is same:',this === target);//true.
-            console.log('::get called, for prop: ', prop);
-            //console.log('  receiver:' ,receiver);
-            //console.log('  target:' ,target);
-            console.log('  with target.workingWithPropertyChain:', target.workingWithPropertyChain);
+            utils.log('::get called, for prop: ', prop);
+            utils.log('  with target.workingWithPropertyChain:', target.workingWithPropertyChain);
 
             let propNameChain = target.workingWithPropertyChain ? target.workingWithPropertyChain : [];
             propNameChain.push(prop);
-            console.log('  propNameChain:', propNameChain);
+            utils.log('  propNameChain:', propNameChain);
             
             
             //first - is it maybe our own thing? This could be [0] - first element, or .forEach or
-            //.filter or any other Array method (from wich we inherit).
+            //.filter or any other Array method (from which we inherit).
             if (typeof target[prop] !== 'undefined') {
-                console.log(`  mode: ${prop} is defined in ourselves`);
+                utils.log(`  mode: ${prop} is defined in ourselves`);
                 
                 //tests: (testing if prop is string is only to just *not* check e.g. [1])
                 //if(false)
@@ -119,7 +133,7 @@
                         /*if(typeof retVal === 'undefined'){
                             return retVal;
                         }*/
-                        console.log('    our own function retval:',retVal);
+                        utils.log('    our own function retval:',retVal);
                         return retVal;
                     };
                 }
@@ -129,7 +143,7 @@
 
             //there is nothing todo, lets return ourselves to enable chaining: 
             if (target.nodes.length === 0) {
-                console.log('   nodes array empty, returning ourselves');
+                utils.log('   nodes array empty, returning ourselves');
                 return receiver;
             }
 
@@ -141,11 +155,11 @@
 
             target.forEach((elem) => {
                 //let type = typeof elem[prop];//{string}
-                let type = typeof Utils.objPath(elem, propNameChain);
-                console.log('  elem[prop] type: ', type);
+                let type = typeof utils.objPath(elem, propNameChain);
+                utils.log('  elem[prop] type: ', type);
                 if (nodesPropertyType !== null && nodesPropertyType !== type) {
                     //@todo: not really sure what to do about this situation:
-                    console.error(`  property ${prop} type varies across nodes!`);
+                    utils.error(`  property ${prop} type varies across nodes!`);
                 }
                 nodesPropertyType = type;
                 if (type === 'object') {
@@ -153,11 +167,11 @@
                 }
             });
 
-            console.log(`  property (${prop}) seems to be of type ${nodesPropertyType}, therefore:`);
+            utils.log(`  property (${prop}) seems to be of type ${nodesPropertyType}, therefore:`);
 
             //e.g. .style, or .classList : 
             if (nodesPropertyType === 'object') {
-                console.log(`  mode: ${prop} seems to be an object, returning new Yes instance with the nodes having it`);
+                utils.log(`  mode: ${prop} seems to be an object, returning new Yes instance with the nodes having it`);
                 //this used to work with 2 levels of props:
                 //return yes(nodesWithPropertyAsObject, target.context, prop);
                 return yes(nodesWithPropertyAsObject, target.context, propNameChain);
@@ -165,21 +179,21 @@
             }
             //it has to be a function call, like .setAttribute(...)  but also .getAttribute()  
             if (nodesPropertyType === 'function') {
-                console.log(`  mode: ${prop} seems to be a function, therefore we return a function:`);
+                utils.log(`  mode: ${prop} seems to be a function, therefore we return a function:`);
                 return function (...args) {
 
-                    console.log('  called function returned by "yes" object,  args:', args);
+                    utils.log('  called function returned by "yes" object,  args:', args);
                     let retVal;//undefined for start
                     target.forEach((elem) => {
                         //ehhh we need those, because we need the context in which we call a function.
                         //hence we'll later use .call
-                        let elemProp = Utils.objPath(elem, propNameChain);
-                        let elemPrevProp = Utils.objPath(elem, propNameChain.slice(0, propNameChain.length - 1));
+                        let elemProp = utils.objPath(elem, propNameChain);
+                        let elemPrevProp = utils.objPath(elem, propNameChain.slice(0, propNameChain.length - 1));
                         retVal = elemProp.call(elemPrevProp, ...args);
                     });
 
                     if (typeof retVal !== 'undefined') {
-                        console.log('   retval:', retVal);
+                        utils.log('   retval:', retVal);
                         return retVal;
                     }
                     //trying to allow chaining... seems it's working.
@@ -188,34 +202,40 @@
             }
             ;
 
-            console.log(`  mode: ${prop} seems to be a string or number or... something else, nvm. We'll return the first node thing `);
+            utils.log(`  mode: ${prop} seems to be a string or number or... something else, nvm. We'll return the first node thing `);
             let firstElem = target.nodes[0];
-            return Utils.objPath(firstElem, propNameChain);
+            return utils.objPath(firstElem, propNameChain);
         }
 
         /*
          this catches .style = 'blah'; But not .style.color = 'blah', this is why we do the magic in 'get' above, with nodesWithPropertyAsObject
          */
         set(target, prop, value) {
-            //console.log('is same:',this === target);//true.
-            console.log('::set called, for prop:', prop, 'val:', value);
-            console.log('  target.workingWitProperty:', target.workingWitProperty);
+            //utils.log('is same:',this === target);//true.
+            utils.log('::set called, for prop:', prop, 'val:', value);
+            utils.log('  target.workingWitProperty:', target.workingWitProperty);
 
             let propNameChain = target.workingWithPropertyChain ? target.workingWithPropertyChain : [];
             propNameChain.push(prop);
-            console.log('  propNameChain:', propNameChain);
+            utils.log('  propNameChain:', propNameChain);
 
             target.forEach((elem) => {
                 let type = typeof elem[prop];
-                console.log('  elem type:', type);
-                console.log('  elem val: ', elem[prop]);
+                utils.log('  elem type:', type);
+                utils.log('  elem val: ', elem[prop]);
                 //if (type !== 'function')
                 {
-                    Utils.objPath(elem, propNameChain, value);
+                    utils.objPath(elem, propNameChain, value);
                 }
             });
 
         }
+
+
+        setLogging(enable){
+            utils.loggingEnabled = enable;
+        }
+       
     }
 
     /////////
@@ -226,9 +246,9 @@
         return new Proxy(yInstance, yInstance);
     }
 
-    //
-    Yes.fn = Yes.prototype;
-    window.yes = yes;
+
+    //finally, it will be available under y:
+    window.y = yes;
 
 
 })(window);
