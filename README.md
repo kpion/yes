@@ -48,3 +48,5 @@ And of course forEach:
         elem.style.textShadow ='-2px -2px 2px #bbb';
     });
 ```                    
+
+See 'index.html' file.
