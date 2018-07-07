@@ -2,7 +2,7 @@
 
 "Yes" - Javascript (experimental) wrapper around querySelector and querySelectorAll with the Proxy object and extending the Array class. 3KB minified.
 
-"Yes" comes from a mispelled "Yet Another Selector" :)
+"Yes" comes from a misspelled "Yet Another Selector" :)
 
 
 I.e. the jQuery-like library (limited to selecting and manipulating elements though), based on **native DOM API**.
@@ -55,3 +55,5 @@ And of course forEach:
 ```                    
 
 See 'index.html' file.
+
+To be continued.
