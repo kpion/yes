@@ -49,7 +49,7 @@
 				
 				/////////////////////////////////////////////////////////////////////////
 				//inits
-				y().setLogging(true);
+				y().setLogging(false);
 				var vanillaD2Elem = document.querySelector('.d2');
 				console.log('vanillaD2Elem:',vanillaD2Elem);
 
@@ -97,6 +97,10 @@
 					y('.d2 .inside').innerHTML = '<p>aaaaaaaaaaaaa</p>';//OK
 				});
 
+				logg('playing with clientWidth',()=>{
+					console.log('d2 reading:', y('.d2').clientWidth);//OK
+					
+				});
 					
 				logg('seting onclick event by .addEventListener',()=>{
 					y('.allDivs').addEventListener('click',event => {

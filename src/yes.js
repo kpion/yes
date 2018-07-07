@@ -1,6 +1,7 @@
 /*
 experimental selector wrapper
 https://github.com/kpion/yes
+v. 0.4
 */
 (function (window) {
     utils = {
@@ -144,7 +145,11 @@ https://github.com/kpion/yes
             //there is nothing todo, lets return ourselves to enable chaining: 
             if (target.nodes.length === 0) {
                 utils.log('   nodes array empty, returning ourselves');
-                return receiver;
+                //return receiver;
+                //new in v. 0.4
+                return function(){
+                    return receiver;
+                }
             }
 
             //lets get the type of the property name in NODES. Can be simple string (like .id, .className), object (style), or function (getAttribute)
